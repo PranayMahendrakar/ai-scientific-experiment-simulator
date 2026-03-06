@@ -1,0 +1,96 @@
+# AI Scientific Experiment Simulator - Configuration
+# Edit this file to customize default settings
+
+experiment:
+  max_variations: 5          # Maximum number of experiment variations to generate
+  cv_folds: 5                # Number of cross-validation folds
+  n_epochs: 50               # Number of training epochs per fold
+  early_stopping_patience: 10 # Epochs without improvement before stopping
+  random_seed: 42            # Reproducibility seed
+  output_dir: "reports"      # Output directory for reports
+
+models:
+  classification:
+    - logistic_regression
+    - random_forest
+    - xgboost
+    - svm
+    - mlp
+  regression:
+    - linear_regression
+    - ridge
+    - gradient_boosting
+    - lasso
+    - svr
+  clustering:
+    - kmeans
+    - dbscan
+    - agglomerative
+    - gmm
+    - kmeans_plus
+  nlp:
+    - bert_classifier
+    - lstm
+    - distilbert
+  cv:
+    - resnet50
+    - efficientnet
+    - vgg16
+
+evaluation:
+  classification:
+    primary_metric: f1_weighted
+    secondary_metrics:
+      - accuracy
+      - precision_weighted
+      - recall_weighted
+      - roc_auc
+  regression:
+    primary_metric: rmse
+    secondary_metrics:
+      - mae
+      - r2_score
+      - mape
+      - explained_variance
+  clustering:
+    primary_metric: silhouette_score
+    secondary_metrics:
+      - davies_bouldin
+      - calinski_harabasz
+      - adjusted_rand
+
+preprocessing:
+  defaults:
+    - standard_scaler
+  imbalanced_datasets:
+    - smote
+    - class_weight_balanced
+  high_dimensional:
+    - pca
+    - feature_selection
+
+hyperparameter_tuning:
+  strategies:
+    baseline:
+      iterations: 1
+      description: Use default parameters only
+    grid_search:
+      iterations: 50
+      description: Exhaustive grid search over parameter space
+    random_search:
+      iterations: 20
+      description: Random sampling from parameter distributions
+    bayesian:
+      iterations: 30
+      description: Bayesian optimization with acquisition function
+
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/simulator.log"
+  console: true
+
+github_pages:
+  output_dir: "."
+  index_file: "index.html"
+  reports_dir: "reports"
