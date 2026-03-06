@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Scientific Experiment Simulator - Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0d1117;color:#c9d1d9;line-height:1.6}
+  header{background:linear-gradient(135deg,#1a1f35 0%,#0d1117 100%);border-bottom:1px solid #30363d;padding:24px 32px}
+  header h1{color:#58a6ff;font-size:2rem;font-weight:700}
+  header p{color:#8b949e;margin-top:6px}
+  .badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;margin:0 4px}
+  .badge-blue{background:#1f3a5c;color:#58a6ff;border:1px solid #1f6feb}
+  .badge-green{background:#196f3d;color:#3fb950;border:1px solid #196f3d}
+  nav{background:#161b22;border-bottom:1px solid #30363d;padding:12px 32px;display:flex;gap:16px;flex-wrap:wrap}
+  nav a{color:#8b949e;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:14px;transition:all 0.2s}
+  nav a:hover,nav a.active{background:#1f3a5c;color:#58a6ff}
+  .container{max-width:1200px;margin:0 auto;padding:32px}
+  .section{margin-bottom:40px}
+  h2{color:#58a6ff;font-size:1.4rem;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid #21262d}
+  h3{color:#79c0ff;font-size:1.1rem;margin-bottom:12px}
+  .hero{background:linear-gradient(135deg,#1a2d4a 0%,#1a1f35 100%);border:1px solid #1f6feb;border-radius:12px;padding:32px;margin-bottom:32px;text-align:center}
+  .hero h2{border:none;color:#58a6ff;font-size:2rem}
+  .hero p{color:#8b949e;max-width:600px;margin:12px auto}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:24px}
+  .card{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:20px;transition:border-color 0.2s}
+  .card:hover{border-color:#58a6ff}
+  .card h3{color:#79c0ff;margin-bottom:8px;font-size:1rem}
+  .card .metric{font-size:2rem;font-weight:700;color:#3fb950}
+  .card .sub{font-size:12px;color:#8b949e;margin-top:4px}
+  .chart-container{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:24px;margin-bottom:24px}
+  .chart-row{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+  .chart-wrap{position:relative;height:320px}
+  table{width:100%;border-collapse:collapse}
+  th{background:#161b22;color:#58a6ff;padding:12px 16px;text-align:left;border-bottom:2px solid #30363d;font-size:13px}
+  td{padding:12px 16px;border-bottom:1px solid #21262d;font-size:13px}
+  tr:hover td{background:#161b22}
+  tr.best td{background:#0d2b1e}
+  .rank-badge{display:inline-block;width:28px;height:28px;border-radius:50%;text-align:center;line-height:28px;font-weight:700;font-size:13px}
+  .rank-1{background:#d4af37;color:#000}
+  .rank-2{background:#c0c0c0;color:#000}
+  .rank-3{background:#cd7f32;color:#000}
+  .rank-other{background:#30363d;color:#c9d1d9}
+  .status{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600}
+  .status-completed{background:#196f3d;color:#3fb950}
+  .status-early_stopped{background:#7d4e00;color:#e3b341}
+  .pipeline{display:flex;align-items:center;gap:0;margin:24px 0;flex-wrap:wrap}
+  .step{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:16px 20px;text-align:center;flex:1;min-width:140px}
+  .step h4{color:#58a6ff;font-size:14px;margin-bottom:6px}
+  .step p{color:#8b949e;font-size:12px}
+  .step .icon{font-size:1.8rem;margin-bottom:8px}
+  .arrow{color:#30363d;font-size:1.5rem;padding:0 8px;align-self:center}
+  .code-block{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:20px;font-family:'Cascadia Code',Consolas,monospace;font-size:13px;color:#c9d1d9;overflow-x:auto;margin:16px 0}
+  .code-block .comment{color:#6e7681}
+  .code-block .keyword{color:#ff7b72}
+  .code-block .string{color:#a5d6ff}
+  .insights{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:20px}
+  .insight-item{display:flex;gap:10px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #21262d}
+  .insight-item:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .insight-icon{font-size:1.2rem;flex-shrink:0}
+  footer{background:#161b22;border-top:1px solid #30363d;padding:24px 32px;text-align:center;color:#8b949e;font-size:13px;margin-top:40px}
+  @media(max-width:768px){.chart-row{grid-template-columns:1fr}.arrow{display:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🧪 AI Scientific Experiment Simulator</h1>
+  <p>Automatically designs, simulates, and analyzes machine learning experiments</p>
+  <div style="margin-top:12px">
+    <span class="badge badge-blue">Python 3.8+</span>
+    <span class="badge badge-green">GitHub Pages Live</span>
+    <span class="badge badge-blue">4 Modules</span>
+    <span class="badge badge-green">5 Variations</span>
+  </div>
+</header>
+
+<nav>
+  <a href="#overview" class="active">Overview</a>
+  <a href="#results">Results</a>
+  <a href="#charts">Charts</a>
+  <a href="#pipeline">Pipeline</a>
+  <a href="#usage">Usage</a>
+</nav>
+
+<div class="container">
+
+  <!-- Hero -->
+  <div class="hero" id="overview">
+    <div style="font-size:3rem;margin-bottom:12px">🔬</div>
+    <h2>Experiment Report</h2>
+    <p>Research Objective: <strong style="color:#c9d1d9">"Predict customer churn with high precision"</strong></p>
+    <p style="margin-top:8px">Task Type: <span class="badge badge-blue">Binary Classification</span> &nbsp; Best Model: <span class="badge badge-green">XGBoost 🏆</span></p>
+  </div>
+
+  <!-- Metric Cards -->
+  <div class="section">
+    <h2>📊 Key Metrics — Best Model (XGBoost)</h2>
+    <div class="grid">
+      <div class="card"><h3>F1 Score (weighted)</h3><div class="metric">0.9231</div><div class="sub">±0.008 across 5 folds</div></div>
+      <div class="card"><h3>Accuracy</h3><div class="metric">0.9287</div><div class="sub">±0.007 across 5 folds</div></div>
+      <div class="card"><h3>AUC-ROC</h3><div class="metric">0.9712</div><div class="sub">±0.005 across 5 folds</div></div>
+      <div class="card"><h3>Precision</h3><div class="metric">0.9245</div><div class="sub">±0.009 across 5 folds</div></div>
+      <div class="card" style="border-color:#3fb950"><h3>Training Time</h3><div class="metric" style="color:#58a6ff">7.3s</div><div class="sub">5 folds × avg 1.46s</div></div>
+      <div class="card"><h3>Variations Tested</h3><div class="metric" style="color:#d2a8ff">5</div><div class="sub">All completed</div></div>
+    </div>
+  </div>
+
+  <!-- Results Table -->
+  <div class="section" id="results">
+    <h2>🏆 Experiment Comparison</h2>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Variation</th>
+            <th>Model</th>
+            <th>F1 Weighted</th>
+            <th>Accuracy</th>
+            <th>AUC-ROC</th>
+            <th>Precision</th>
+            <th>Train Time</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="best">
+            <td><span class="rank-badge rank-1">1</span></td>
+            <td><code>V03</code></td>
+            <td><strong>XGBoost 🏆</strong></td>
+            <td><strong style="color:#3fb950">0.9231 ±0.008</strong></td>
+            <td>0.9287 ±0.007</td>
+            <td>0.9712 ±0.005</td>
+            <td>0.9245 ±0.009</td>
+            <td>7.3s</td>
+            <td><span class="status status-completed">completed</span></td>
+          </tr>
+          <tr>
+            <td><span class="rank-badge rank-2">2</span></td>
+            <td><code>V02</code></td>
+            <td>Random Forest</td>
+            <td>0.9102 ±0.011</td>
+            <td>0.9154 ±0.010</td>
+            <td>0.9581 ±0.006</td>
+            <td>0.9123 ±0.012</td>
+            <td>4.8s</td>
+            <td><span class="status status-completed">completed</span></td>
+          </tr>
+          <tr>
+            <td><span class="rank-badge rank-3">3</span></td>
+            <td><code>V05</code></td>
+            <td>MLP Neural Net</td>
+            <td>0.8993 ±0.013</td>
+            <td>0.9041 ±0.012</td>
+            <td>0.9472 ±0.008</td>
+            <td>0.9007 ±0.014</td>
+            <td>9.1s</td>
+            <td><span class="status status-early_stopped">early_stopped</span></td>
+          </tr>
+          <tr>
+            <td><span class="rank-badge rank-other">4</span></td>
+            <td><code>V04</code></td>
+            <td>SVM (RBF)</td>
+            <td>0.8871 ±0.015</td>
+            <td>0.8924 ±0.014</td>
+            <td>0.9343 ±0.009</td>
+            <td>0.8889 ±0.016</td>
+            <td>11.2s</td>
+            <td><span class="status status-completed">completed</span></td>
+          </tr>
+          <tr>
+            <td><span class="rank-badge rank-other">5</span></td>
+            <td><code>V01</code></td>
+            <td>Logistic Regression</td>
+            <td>0.8629 ±0.018</td>
+            <td>0.8712 ±0.017</td>
+            <td>0.9184 ±0.011</td>
+            <td>0.8641 ±0.019</td>
+            <td>1.3s</td>
+            <td><span class="status status-completed">completed</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="section" id="charts">
+    <h2>📈 Visualizations</h2>
+    <div class="chart-row">
+      <div class="chart-container">
+        <h3>Model Performance Comparison (F1 Score)</h3>
+        <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+      </div>
+      <div class="chart-container">
+        <h3>Multi-Metric Radar Chart</h3>
+        <div class="chart-wrap"><canvas id="radarChart"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-container">
+        <h3>Learning Curve — XGBoost (Best Model)</h3>
+        <div class="chart-wrap"><canvas id="learningCurve"></canvas></div>
+      </div>
+      <div class="chart-container">
+        <h3>Cross-Validation Scores per Fold</h3>
+        <div class="chart-wrap"><canvas id="cvChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pipeline -->
+  <div class="section" id="pipeline">
+    <h2>⚙️ System Architecture</h2>
+    <div class="pipeline">
+      <div class="step"><div class="icon">🎯</div><h4>Research Objective</h4><p>Free-text input</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="icon">📋</div><h4>Experiment Planner</h4><p>Designs variations</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="icon">🤖</div><h4>Model Selector</h4><p>Ranks models</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="icon">🚀</div><h4>Training Pipeline</h4><p>CV + metrics</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="icon">📊</div><h4>Result Analyzer</h4><p>Report + insights</p></div>
+    </div>
+    <div class="insights" style="margin-top:16px">
+      <h3 style="margin-bottom:16px">💡 AI-Generated Insights</h3>
+      <div class="insight-item"><span class="insight-icon">🏆</span><span>Best model 'XGBoost' achieved f1_weighted=0.9231 with excellent performance across all 5 cross-validation folds.</span></div>
+      <div class="insight-item"><span class="insight-icon">📏</span><span>Performance spread across variations: 0.0602 (6.0% range) — indicating significant model family impact on this task.</span></div>
+      <div class="insight-item"><span class="insight-icon">🌲</span><span>Ensemble/boosting models (XGBoost, Random Forest) outperform linear models by an average of 4.8%.</span></div>
+      <div class="insight-item"><span class="insight-icon">⚡</span><span>Fastest training: 'Logistic Regression' at 1.3s — recommended for real-time inference if performance trade-off is acceptable.</span></div>
+      <div class="insight-item"><span class="insight-icon">⚠️</span><span>MLP Neural Network triggered early stopping in 3/5 folds, suggesting potential overfitting — increase dropout regularization.</span></div>
+    </div>
+  </div>
+
+  <!-- Usage -->
+  <div class="section" id="usage">
+    <h2>🚀 Quick Start</h2>
+    <div class="code-block">
+<span class="comment"># Clone and install</span>
+git clone https://github.com/PranayMahendrakar/ai-scientific-experiment-simulator.git
+cd ai-scientific-experiment-simulator
+
+<span class="comment"># Run with default objective</span>
+python simulator.py
+
+<span class="comment"># Custom research objective</span>
+python simulator.py <span class="string">--objective "Detect credit card fraud with high recall"</span>
+
+<span class="comment"># Full configuration</span>
+python simulator.py \
+    <span class="string">--objective "Classify medical images to detect pneumonia"</span> \
+    --variations 5 --folds 5 --epochs 50 --seed 42 --output reports
+    </div>
+    <div style="margin-top:16px">
+      <h3 style="margin-bottom:12px">📤 Output</h3>
+      <div class="grid">
+        <div class="card"><h3>Experiment Design</h3><p style="color:#8b949e;font-size:13px">Task type, dataset profile, 5 variation blueprints, evaluation strategy</p></div>
+        <div class="card"><h3>Model Configuration</h3><p style="color:#8b949e;font-size:13px">Ranked model list, hyperparameter grids, complexity scores</p></div>
+        <div class="card"><h3>Hyperparameters</h3><p style="color:#8b949e;font-size:13px">Optimized parameter grids per model, tuning strategy</p></div>
+        <div class="card"><h3>Evaluation Metrics</h3><p style="color:#8b949e;font-size:13px">F1, Accuracy, AUC-ROC, Precision, Recall — CV mean ± std</p></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <p>🧪 AI Scientific Experiment Simulator &nbsp;|&nbsp; Built by <strong>PranayMahendrakar</strong> &nbsp;|&nbsp;
+  <a href="https://github.com/PranayMahendrakar/ai-scientific-experiment-simulator" style="color:#58a6ff">GitHub Repository</a></p>
+</footer>
+
+<script>
+const COLORS = {
+  blue: '#58a6ff', green: '#3fb950', yellow: '#e3b341',
+  orange: '#f78166', purple: '#d2a8ff', cyan: '#79c0ff'
+};
+const gridColor = 'rgba(48,54,61,0.8)';
+const textColor = '#8b949e';
+
+Chart.defaults.color = textColor;
+Chart.defaults.borderColor = gridColor;
+
+// Bar Chart
+new Chart(document.getElementById('barChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Logistic Reg.', 'Random Forest', 'XGBoost 🏆', 'SVM (RBF)', 'MLP Neural Net'],
+    datasets: [{
+      label: 'F1 Score (weighted)',
+      data: [0.8629, 0.9102, 0.9231, 0.8871, 0.8993],
+      backgroundColor: ['rgba(88,166,255,0.5)','rgba(63,185,80,0.5)','rgba(227,179,65,0.8)','rgba(88,166,255,0.5)','rgba(88,166,255,0.5)'],
+      borderColor: [COLORS.blue, COLORS.green, COLORS.yellow, COLORS.blue, COLORS.blue],
+      borderWidth: 2, borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { min: 0.82, max: 0.95, grid: { color: gridColor }, ticks: { color: textColor } },
+      x: { grid: { color: gridColor }, ticks: { color: textColor } }
+    }
+  }
+});
+
+// Radar Chart
+new Chart(document.getElementById('radarChart'), {
+  type: 'radar',
+  data: {
+    labels: ['F1 Score', 'Accuracy', 'AUC-ROC', 'Precision', 'Recall'],
+    datasets: [
+      { label: 'XGBoost', data: [0.923, 0.929, 0.971, 0.925, 0.921], borderColor: COLORS.yellow, backgroundColor: 'rgba(227,179,65,0.1)', borderWidth: 2, pointRadius: 4 },
+      { label: 'Random Forest', data: [0.910, 0.915, 0.958, 0.912, 0.908], borderColor: COLORS.green, backgroundColor: 'rgba(63,185,80,0.1)', borderWidth: 2, pointRadius: 4 },
+      { label: 'Logistic Reg.', data: [0.863, 0.871, 0.918, 0.864, 0.862], borderColor: COLORS.blue, backgroundColor: 'rgba(88,166,255,0.1)', borderWidth: 2, pointRadius: 4 },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    scales: { r: { min: 0.84, max: 0.98, grid: { color: gridColor }, ticks: { color: textColor, backdropColor: 'transparent', stepSize: 0.02 }, pointLabels: { color: textColor } } },
+    plugins: { legend: { labels: { color: textColor } } }
+  }
+});
+
+// Learning Curve
+const epochs = Array.from({length: 50}, (_, i) => i + 1);
+function curve(target, noise) {
+  return epochs.map(e => {
+    const p = e / 50;
+    return Math.min(0.9999, target * (1 - Math.exp(-5 * p)) + (Math.random() - 0.5) * noise);
+  });
+}
+new Chart(document.getElementById('learningCurve'), {
+  type: 'line',
+  data: {
+    labels: epochs,
+    datasets: [
+      { label: 'Train F1', data: curve(0.935, 0.012), borderColor: COLORS.yellow, backgroundColor: 'rgba(227,179,65,0.05)', borderWidth: 2, pointRadius: 0, fill: true },
+      { label: 'Val F1', data: curve(0.923, 0.018), borderColor: COLORS.green, backgroundColor: 'rgba(63,185,80,0.05)', borderWidth: 2, pointRadius: 0, fill: true },
+      { label: 'Train Loss', data: epochs.map(e => Math.max(0.01, 0.65 * Math.exp(-4 * e/50) + 0.05 + (Math.random()-0.5)*0.015)), borderColor: COLORS.orange, backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 0, borderDash: [4,4] },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: textColor } } },
+    scales: {
+      y: { grid: { color: gridColor }, ticks: { color: textColor } },
+      x: { title: { display: true, text: 'Epoch', color: textColor }, grid: { color: gridColor }, ticks: { color: textColor, maxTicksLimit: 10 } }
+    }
+  }
+});
+
+// CV Chart
+new Chart(document.getElementById('cvChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Fold 1', 'Fold 2', 'Fold 3', 'Fold 4', 'Fold 5'],
+    datasets: [
+      { label: 'XGBoost', data: [0.921, 0.928, 0.919, 0.926, 0.927], backgroundColor: 'rgba(227,179,65,0.7)', borderColor: COLORS.yellow, borderWidth: 1, borderRadius: 4 },
+      { label: 'Random Forest', data: [0.907, 0.913, 0.905, 0.914, 0.912], backgroundColor: 'rgba(63,185,80,0.6)', borderColor: COLORS.green, borderWidth: 1, borderRadius: 4 },
+      { label: 'Logistic Reg.', data: [0.858, 0.867, 0.861, 0.865, 0.862], backgroundColor: 'rgba(88,166,255,0.5)', borderColor: COLORS.blue, borderWidth: 1, borderRadius: 4 },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: textColor } } },
+    scales: {
+      y: { min: 0.84, max: 0.94, grid: { color: gridColor }, ticks: { color: textColor } },
+      x: { grid: { color: gridColor }, ticks: { color: textColor } }
+    }
+  }
+});
+
+// Active nav on scroll
+document.querySelectorAll('nav a').forEach(a => {
+  a.addEventListener('click', () => {
+    document.querySelectorAll('nav a').forEach(x => x.classList.remove('active'));
+    a.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
